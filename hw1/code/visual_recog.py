@@ -9,6 +9,7 @@ import visual_words
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 import multiprocessing
+import scipy.spatial.distance
 
 def compute_feature_one_image(args):
 	i, image_path, label = args
@@ -50,12 +51,9 @@ def build_recognition_system(num_workers=2):
 	features = np.empty((0, int(cluster_num*(pow(4, SPM_layer_num+1) - 1)/3)))
 	labels = []
 
-	# for i in range(train_data['image_names'].shape[0]):
-	# 	features = np.append(features, np.reshape(get_image_feature("../data/" + train_data['image_names'][i][0], dictionary, SPM_layer_num, dictionary.shape[0]), (1, -1)), axis=0)
-	# 	labels = np.append(labels, train_data['labels'][i])
-	# with multiprocessing.Pool(num_workers) as p:
-	# 	args = zip(list(range(training_sample_num)), train_data['image_names'], train_data['labels'])
-	# 	p.map(compute_feature_one_image, args)
+	with multiprocessing.Pool(num_workers) as p:
+		args = zip(list(range(training_sample_num)), train_data['image_names'], train_data['labels'])
+		p.map(compute_feature_one_image, args)
 	for i in range(train_data['image_names'].shape[0]):
 		temp = np.load("../temp/"+"training_image_"+str(i)+".npz")
 		features = np.append(features, np.reshape(temp['feature'], (1,-1)), axis=0)
@@ -77,11 +75,20 @@ def evaluate_one_image(index):
 	img_path = "../data/"+test_data['image_names'][i][0]
 	image = imageio.imread(img_path)
 	wordmap = visual_words.get_visual_words(image, dictionary)
+
+	# cm = plt.get_cmap('gist_rainbow')
+	# colored_img = cm(wordmap)
+	# plt.imshow(colored_img)
+	# plt.show()
+
 	hist = get_feature_from_wordmap_SPM(wordmap, SPM_layer_num, dictionary.shape[0])
 	similarity = distance_to_set(hist, features)
 	predicted_label = np.argmax(similarity)
 
 	correct = 0
+	# print(test_data['labels'].shape)
+	# print(labels.shape)
+	# print(predicted_label)
 	if test_data['labels'][i] == labels[predicted_label]:
 		correct = 1
 	np.save("../temp/"+"predicted_label_"+str(i)+".npy", correct)
@@ -166,12 +173,18 @@ def distance_to_set(word_hist,histograms):
 	* sim: numpy.ndarray of shape (N)
 	'''
 
-	dist = np.linalg.norm(word_hist - histograms, axis=1)
+	#dist = np.linalg.norm(word_hist - histograms, axis=1)
+
+	minima = np.minimum(word_hist, histograms)
+	#print(minima.shape)
+	#print(minima.shape)
+	#dist = np.true_divide(np.sum(minima), np.sum(histograms))
+	dist = np.sum(minima, axis=1)
 	#print(dist.shape)
 	# normalize
 	#dist = preprocessing.normalize(dist)
 	# inverse (similarity = 1 / distance)
-	dist = 1 / (dist+0.0001)
+	#dist = 1 / (dist+0.0001)
 	return dist
 
 	# ----- TODO -----
@@ -206,11 +219,12 @@ def get_feature_from_wordmap_SPM(wordmap,layer_num,dict_size):
 	* hist_all: numpy.ndarray of shape (K*(4^layer_num-1)/3)
 	'''
 	hist_all = []
+	norm_factor = wordmap.shape[0]*wordmap.shape[1]
 
 	for i in range(layer_num+1):
 
 		if i == 0 or i == 1:
-			weight = pow(2, -i)
+			weight = pow(2, -layer_num)
 		else:
 			weight = pow(2, layer_num-i-1)
 
@@ -220,10 +234,12 @@ def get_feature_from_wordmap_SPM(wordmap,layer_num,dict_size):
 		for rows in x:
 			y = np.array_split(rows, cell_num, axis=1)
 			for cols in y:
-				hist, bin_edges = np.histogram(cols, bins=dict_size, density=True)
-				hist *= weight
-				hist_all = np.append(hist_all, hist)
+				#hist, bin_edges = np.histogram(cols, bins=dict_size, density=True)
+				hist, bin_edges = np.histogram(cols, bins=dict_size)
+				hist_all = np.append(hist_all, hist / norm_factor * weight)
 
+	#hist_all = hist_all / np.linalg.norm(hist_all)
+	#print(np.sum(hist_all))
 	# Visualization
 	# bin_edges = np.arange(hist_all.shape[0]+1)
 	# plt.bar(bin_edges[:-1], hist_all, width = 1)

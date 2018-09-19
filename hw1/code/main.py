@@ -16,9 +16,11 @@ if __name__ == '__main__':
 	# image = image.astype('float')/255
 	# filter_responses = visual_words.extract_filter_responses(image)
 	# util.display_filter_responses(filter_responses)
-	print("Start generating the dictionary...")
-	visual_words.compute_dictionary(num_workers=num_cores)
-	print("Dictionary is generated...")
+
+	# print("Start generating the dictionary...")
+	# visual_words.compute_dictionary(num_workers=num_cores)
+	# print("Dictionary is generated...")
+
 	# path_img = "../data/kitchen/sun_aasmevtpkslccptd.jpg"
 	# image = skimage.io.imread(path_img)
 	#dictionary = np.load('dictionary.npy')
@@ -39,9 +41,11 @@ if __name__ == '__main__':
 	# plt.bar(bin_edges[:-1], hist, width = 1)
 	# plt.xlim(min(bin_edges), max(bin_edges))
 	# plt.show()
-	print("Start building a recognition system...")
-	visual_recog.build_recognition_system(num_workers=num_cores)
-	print("Recognition system is built...")
+
+	# print("Start building a recognition system...")
+	# visual_recog.build_recognition_system(num_workers=num_cores)
+	# print("Recognition system is built...")
+
 	#conf, accuracy = visual_recog.evaluate_recognition_system(num_workers=num_cores)
 	print("Start evaluation...")
 	visual_recog.evaluate_recognition_system(num_workers=num_cores)
