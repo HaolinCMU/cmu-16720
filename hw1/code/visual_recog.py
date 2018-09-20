@@ -40,10 +40,6 @@ def build_recognition_system(num_workers=2):
 	train_data = np.load("../data/train_data.npz")
 	dictionary = np.load("dictionary.npy")
 
-	# ----- TODO -----
-	# with multiprocessing.Pool(num_workers) as p:
-	# 	args = zip(list(range(train_data['image_names'].shape[0])), [alpha]*train_data['image_names'].shape[0], train_data['image_names'])
-	# 	p.map(compute_dictionary_one_image, args)
 	SPM_layer_num = 2
 	cluster_num = dictionary.shape[0]
 	training_sample_num = train_data['image_names'].shape[0]
@@ -66,7 +62,7 @@ def evaluate_one_image(index):
 
 	test_data = np.load("../data/test_data.npz")
 	trained_system = np.load("trained_system.npz")
-	# ----- TODO -----
+
 	features = trained_system['features']
 	labels = trained_system['labels']
 	dictionary = trained_system['dictionary']
@@ -76,22 +72,11 @@ def evaluate_one_image(index):
 	image = imageio.imread(img_path)
 	wordmap = visual_words.get_visual_words(image, dictionary)
 
-	# cm = plt.get_cmap('gist_rainbow')
-	# colored_img = cm(wordmap)
-	# plt.imshow(colored_img)
-	# plt.show()
-
 	hist = get_feature_from_wordmap_SPM(wordmap, SPM_layer_num, dictionary.shape[0])
 	similarity = distance_to_set(hist, features)
 	predicted_label = np.argmax(similarity)
 
-	correct = 0
-	# print(test_data['labels'].shape)
-	# print(labels.shape)
-	# print(predicted_label)
-	if test_data['labels'][i] == labels[predicted_label]:
-		correct = 1
-	np.save("../temp/"+"predicted_label_"+str(i)+".npy", correct)
+	np.save("../temp/"+"predicted_label_"+str(i)+".npy", labels[predicted_label])
 
 def evaluate_recognition_system(num_workers=2):
 	'''
@@ -114,33 +99,22 @@ def evaluate_recognition_system(num_workers=2):
 	dictionary = trained_system['dictionary']
 	SPM_layer_num = int(trained_system['SPM_layer_num'])
 
-	# count = 0
-	# for i in range(100):
-	# 	img_path = "../data/"+test_data['image_names'][i][0]
-	# 	print(img_path)
-	# 	image = imageio.imread(img_path)
-	# 	wordmap = visual_words.get_visual_words(image, dictionary)
-	# 	hist = get_feature_from_wordmap_SPM(wordmap, SPM_layer_num, dictionary.shape[0])
-	# 	similarity = distance_to_set(hist, features)
-	# 	index = np.argmax(similarity)
-	#
-	# 	print(index)
-	# 	print(labels[index])
 	test_sample_num = test_data['image_names'].shape[0]
 
 	with multiprocessing.Pool(num_workers) as p:
 		index = list(range(test_sample_num))
 		p.map(evaluate_one_image, index)
 
-	counter = 0
+	conf = np.zeros((8,8))
+
 	for i in range(test_sample_num):
-		temp = np.load("../temp/"+"predicted_label_"+str(i)+".npy")
-		if temp == 1:
-			counter = counter + 1
-	print("Accuracy: ", counter/test_sample_num)
-	pass
+		predicted_label = np.load("../temp/"+"predicted_label_"+str(i)+".npy")
+		conf[test_data['labels'][i], int(predicted_label)] += 1
 
+	accuracy = np.trace(conf) / np.sum(conf)
+	print("Accuracy: ", accuracy)
 
+	return conf, accuracy
 
 
 def get_image_feature(file_path,dictionary,layer_num,K):
@@ -173,23 +147,10 @@ def distance_to_set(word_hist,histograms):
 	* sim: numpy.ndarray of shape (N)
 	'''
 
-	#dist = np.linalg.norm(word_hist - histograms, axis=1)
-
 	minima = np.minimum(word_hist, histograms)
-	#print(minima.shape)
-	#print(minima.shape)
-	#dist = np.true_divide(np.sum(minima), np.sum(histograms))
-	dist = np.sum(minima, axis=1)
-	#print(dist.shape)
-	# normalize
-	#dist = preprocessing.normalize(dist)
-	# inverse (similarity = 1 / distance)
-	#dist = 1 / (dist+0.0001)
-	return dist
+	similarity = np.sum(minima, axis=1)
 
-	# ----- TODO -----
-
-
+	return similarity
 
 def get_feature_from_wordmap(wordmap,dict_size):
 	'''
@@ -234,12 +195,9 @@ def get_feature_from_wordmap_SPM(wordmap,layer_num,dict_size):
 		for rows in x:
 			y = np.array_split(rows, cell_num, axis=1)
 			for cols in y:
-				#hist, bin_edges = np.histogram(cols, bins=dict_size, density=True)
 				hist, bin_edges = np.histogram(cols, bins=dict_size)
 				hist_all = np.append(hist_all, hist / norm_factor * weight)
 
-	#hist_all = hist_all / np.linalg.norm(hist_all)
-	#print(np.sum(hist_all))
 	# Visualization
 	# bin_edges = np.arange(hist_all.shape[0]+1)
 	# plt.bar(bin_edges[:-1], hist_all, width = 1)
