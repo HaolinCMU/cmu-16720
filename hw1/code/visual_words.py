@@ -127,7 +127,7 @@ def compute_dictionary(num_workers=2):
 		p.map(compute_dictionary_one_image, args)
 
 	filter_responses = np.empty((0, 60))
-
+	os.mkdir("../temp/")
 	for i in range(train_data['image_names'].shape[0]):
 		response = np.load("../temp/"+str(i)+".npz")
 		filter_responses = np.append(filter_responses, response['filter_responses'], axis=0)

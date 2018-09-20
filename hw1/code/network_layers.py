@@ -14,32 +14,37 @@ def extract_deep_feature(x,vgg16_weights):
 	[output]
 	* feat: numpy.ndarray of shape (K)
 	'''
+	linear_layer_counter = 0
+
 	for weight in vgg16_weights:
+		# Terminate at FC7 layer
+		if linear_layer_counter == 2:
+			x = relu(x)
+			return x
+
 		layer_type = weight[0]
+
 		if layer_type == "conv2d":
 			layer_weight = weight[1]
 			bias = weight[2]
-
-			x= multichannel_conv2d(x, layer_weight, bias)
+			x = multichannel_conv2d(x, layer_weight, bias)
 			print("Image shape after "+layer_type+" : ", x.shape)
 
 		elif layer_type == "maxpool2d":
 			kernel_size = weight[1]
-			input_buffer = max_pool2d(x, kernel_size)
+			x = max_pool2d(x, kernel_size)
 			print("Image shape after "+layer_type+" : ", x.shape)
 		elif layer_type == "relu":
 			x = relu(x)
 			print("Image shape after "+layer_type+" : ", x.shape)
 		elif layer_type == "linear":
 			layer_weight = weight[1]
-			#print(layer_weight.shape)
 			bias = weight[2]
-			#print(bias.shape)
 			x = linear(x, layer_weight, bias)
+			linear_layer_counter += 1
 			print("Image shape after "+layer_type+" : ", x.shape)
 
-	pass
-
+	return x
 
 def multichannel_conv2d(x,weight,bias):
 	'''
@@ -64,7 +69,6 @@ def multichannel_conv2d(x,weight,bias):
 
 	return feat + bias
 
-
 def relu(x):
 	'''
 	Rectified linear unit.
@@ -88,7 +92,7 @@ def max_pool2d(x,size):
 	[output]
 	* y: numpy.ndarray of shape (H/size,W/size,input_dim)
 	'''
-	return skimage.measure.block_reduce(x, (1, int(x.shape[0]//size), int(x.shape[1]//size)), func=np.max)
+	return skimage.measure.block_reduce(x, (size, size, 1), func=np.max)
 
 
 def linear(x,W,b):

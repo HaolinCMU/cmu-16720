@@ -112,7 +112,7 @@ def evaluate_recognition_system(num_workers=2):
 		conf[test_data['labels'][i], int(predicted_label)] += 1
 
 	accuracy = np.trace(conf) / np.sum(conf)
-	print("Accuracy: ", accuracy)
+	print("Accuracy (Bag of visual words): ", accuracy)
 
 	return conf, accuracy
 

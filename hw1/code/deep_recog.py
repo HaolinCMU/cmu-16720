@@ -25,32 +25,51 @@ def build_recognition_system(vgg16,num_workers=2):
 	* labels: numpy.ndarray of shape (N)
 	'''
 
-
 	train_data = np.load("../data/train_data.npz")
-	# ----- TODO -----
+
 	training_sample_num = train_data['image_names'].shape[0]
 
 	# with multiprocessing.Pool(num_workers) as p:
 	# 	args = zip(list(range(training_sample_num)), train_data['image_names'])
 	# 	p.map(get_image_feature, args)
-
+	vgg16.classifier = torch.nn.Sequential(*list(vgg16.classifier.children())[:-2])
 	with multiprocessing.Pool(num_workers) as p:
-		p.map(partial(get_image_feature_pytorch, vgg16=vgg16), train_data['image_names'])
+		args = zip(list(range(training_sample_num)), train_data['image_names'])
+		p.map(partial(get_image_feature_pytorch, vgg16=vgg16), args)
+
 	# Test
 	# for i in range(training_sample_num):
 	# 	args = i, train_data['image_names'][i]
 	# 	get_image_feature(args)
+	#
+	# for i in range(training_sample_num):
+	# 	get_image_feature_pytorch(train_data['image_names'][i], vgg16)
 
-	for i in range(training_sample_num):
-		get_image_feature_pytorch(train_data['image_names'][i], vgg16)
+	features = np.empty((0, 4096))
 
-	# for i in range(train_data['image_names'].shape[0]):
-	# 	temp = np.load("../temp/"+"training_image_"+str(i)+".npz")
-	# 	features = np.append(features, np.reshape(temp['feature'], (1,-1)), axis=0)
-	# 	labels = np.append(labels, temp['label'])
-	#print(weights)
-	#print(vgg16.features)
-	pass
+	for i in range(train_data['image_names'].shape[0]):
+		temp = np.load("../temp/"+"image_feature_"+str(i)+".npy")
+		#print(temp.shape)
+		features = np.append(features, temp, axis=0)
+
+	labels = train_data['labels']
+	np.savez("trained_system_deep.npz", features=features, labels=labels)
+
+
+def evaluate_one_image_pytorch(args, vgg16):
+
+	train_features = np.load("trained_system_deep.npz")['features']
+	labels = np.load("trained_system_deep.npz")['labels']
+
+	i, image_path = args
+	img_path = "../data/"+image_path[0]
+	image = imageio.imread(img_path)
+	img = preprocess_image_pytorch(image)
+
+	feature = vgg16.forward(img).detach().numpy()
+	label = labels[np.argmax(distance_to_set(feature, train_features))]
+
+	np.save("../temp/"+"predicted_label_deep_"+str(i)+".npy", label)
 
 
 def evaluate_recognition_system(vgg16,num_workers=2):
@@ -68,9 +87,24 @@ def evaluate_recognition_system(vgg16,num_workers=2):
 
 
 	test_data = np.load("../data/test_data.npz")
-	# ----- TODO -----
-	pass
 
+	test_sample_num = test_data['image_names'].shape[0]
+
+	vgg16.classifier = torch.nn.Sequential(*list(vgg16.classifier.children())[:-2])
+	with multiprocessing.Pool(num_workers) as p:
+		args = zip(list(range(test_sample_num)), test_data['image_names'])
+		p.map(partial(evaluate_one_image_pytorch, vgg16=vgg16), args)
+
+	conf = np.zeros((8,8))
+
+	for i in range(test_sample_num):
+		predicted_label = np.load("../temp/"+"predicted_label_deep_"+str(i)+".npy")
+		conf[test_data['labels'][i], int(predicted_label)] += 1
+
+	accuracy = np.trace(conf) / np.sum(conf)
+	print("Accuracy (VGG16): ", accuracy)
+	
+	return conf, accuracy
 
 def preprocess_image(image):
 	'''
@@ -80,21 +114,29 @@ def preprocess_image(image):
 	* image: numpy.ndarray of shape (H,W,3)
 
 	[output]
-	* image_processed: torch.Tensor of shape (3,H,W)
+	* image_processed: numpy.ndarray of shape (224, 224, 3)
 	'''
 	image = image.astype('float') / 255
-	image = skimage.transform.resize(image, (224, 224, 3))
-	#print("Preprocessed image shape: ", image.shape)
+	image = skimage.transform.resize(image, (224, 224, 3), mode='reflect')
 
 	return image
 
 def preprocess_image_pytorch(image):
+	'''
+	Preprocesses the image to load into the prebuilt network.
+
+	[input]
+	* image: numpy.ndarray of shape (H,W,3)
+
+	[output]
+	* image_processed: torch.Tensor of shape (1, 3, 224, 224)
+	'''
 	image = image.astype('float') / 255
-	image = skimage.transform.resize(image, (224, 224, 3))
+	image = skimage.transform.resize(image, (224, 224, 3), mode='reflect')
 	image = np.swapaxes(image, axis1=1, axis2=2)
 	image = np.swapaxes(image, axis1=0, axis2=1)
 	image = image[np.newaxis, :]
-	#print("Preprocessed image shape: ", image.shape)
+
 	return torch.from_numpy(image)
 
 def get_image_feature(args):
@@ -110,7 +152,6 @@ def get_image_feature(args):
 	* feat: evaluated deep feature
 	'''
 
-	#i,image_path,vgg16 = args
 	i, image_path = args
 
 	img_path = "../data/"+image_path[0]
@@ -120,17 +161,18 @@ def get_image_feature(args):
 	weights = util.get_VGG16_weights()
 	feature = network_layers.extract_deep_feature(img, weights)
 
-	#np.save("../temp/"+"image_feature_"+str(i)+".npy", feat)
+	np.save("../temp/"+"image_feature_"+str(i)+".npy", feature)
 
-	pass
+def get_image_feature_pytorch(args, vgg16):
 
-def get_image_feature_pytorch(image_path, vgg16):
-
+	i, image_path = args
 	img_path = "../data/"+image_path[0]
 	image = imageio.imread(img_path)
 	img = preprocess_image_pytorch(image)
 
-	vgg16.forward(img)
+	feature = vgg16.forward(img)
+
+	np.save("../temp/"+"image_feature_"+str(i)+".npy", feature.detach().numpy())
 
 def distance_to_set(feature,train_features):
 	'''
@@ -144,6 +186,4 @@ def distance_to_set(feature,train_features):
 	* dist: numpy.ndarray of shape (N)
 	'''
 
-	# ----- TODO -----
-
-	pass
+	return -np.linalg.norm(feature - train_features, axis=1)
