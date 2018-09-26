@@ -28,21 +28,21 @@ def extract_deep_feature(x,vgg16_weights):
 			layer_weight = weight[1]
 			bias = weight[2]
 			x = multichannel_conv2d(x, layer_weight, bias)
-			print("Image shape after "+layer_type+" : ", x.shape)
+			#print("Image shape after "+layer_type+" : ", x.shape)
 
 		elif layer_type == "maxpool2d":
 			kernel_size = weight[1]
 			x = max_pool2d(x, kernel_size)
-			print("Image shape after "+layer_type+" : ", x.shape)
+			#print("Image shape after "+layer_type+" : ", x.shape)
 		elif layer_type == "relu":
 			x = relu(x)
-			print("Image shape after "+layer_type+" : ", x.shape)
+			#print("Image shape after "+layer_type+" : ", x.shape)
 		elif layer_type == "linear":
 			layer_weight = weight[1]
 			bias = weight[2]
 			x = linear(x, layer_weight, bias)
 			linear_layer_counter += 1
-			print("Image shape after "+layer_type+" : ", x.shape)
+			#print("Image shape after "+layer_type+" : ", x.shape)
 
 	return x
 
@@ -64,8 +64,11 @@ def multichannel_conv2d(x,weight,bias):
 
 	for i in range(output_dim):
 		weight_single = np.swapaxes(weight[i], axis1=0, axis2=2) # input_dim * kernel_size * kernel_size
+		#print("weight_single")
 		convolved = np.sum(scipy.ndimage.convolve(x, weight_single), axis=2)[:,:,np.newaxis]
+		#print("convolution")
 		feat = np.append(feat, convolved, axis=2)
+		#print("i: ", i)
 
 	return feat + bias
 

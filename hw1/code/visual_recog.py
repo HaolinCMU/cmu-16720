@@ -19,7 +19,7 @@ def compute_feature_one_image(args):
 	K = dictionary.shape[0]
 
 	feature = np.reshape(get_image_feature("../data/" + image_path[0], dictionary, SPM_layer_num, K), (1, -1))
-	#print(i)
+
 	np.savez("../temp/"+"training_image_"+str(i)+".npz", feature=feature, label=label)
 
 
@@ -47,9 +47,11 @@ def build_recognition_system(num_workers=2):
 	features = np.empty((0, int(cluster_num*(pow(4, SPM_layer_num+1) - 1)/3)))
 	labels = []
 
+	os.mkdir("../temp/")
 	with multiprocessing.Pool(num_workers) as p:
 		args = zip(list(range(training_sample_num)), train_data['image_names'], train_data['labels'])
 		p.map(compute_feature_one_image, args)
+		
 	for i in range(train_data['image_names'].shape[0]):
 		temp = np.load("../temp/"+"training_image_"+str(i)+".npz")
 		features = np.append(features, np.reshape(temp['feature'], (1,-1)), axis=0)
@@ -58,6 +60,7 @@ def build_recognition_system(num_workers=2):
 	np.savez("trained_system.npz", features=features, labels=labels, dictionary=dictionary, SPM_layer_num=SPM_layer_num)
 
 def evaluate_one_image(index):
+
 	i = index
 
 	test_data = np.load("../data/test_data.npz")
@@ -90,10 +93,9 @@ def evaluate_recognition_system(num_workers=2):
 	* accuracy: accuracy of the evaluated system
 	'''
 
-
 	test_data = np.load("../data/test_data.npz")
 	trained_system = np.load("trained_system.npz")
-	# ----- TODO -----
+
 	features = trained_system['features']
 	labels = trained_system['labels']
 	dictionary = trained_system['dictionary']
@@ -109,6 +111,8 @@ def evaluate_recognition_system(num_workers=2):
 
 	for i in range(test_sample_num):
 		predicted_label = np.load("../temp/"+"predicted_label_"+str(i)+".npy")
+		if test_data['labels'][i] != predicted_label:
+			print(test_data['image_names'][i][0]+" is predicted as: "+str(predicted_label))
 		conf[test_data['labels'][i], int(predicted_label)] += 1
 
 	accuracy = np.trace(conf) / np.sum(conf)
@@ -130,6 +134,7 @@ def get_image_feature(file_path,dictionary,layer_num,K):
 	[output]
 	* feature: numpy.ndarray of shape (K)
 	'''
+
 	image = imageio.imread(file_path)
 	wordmap = visual_words.get_visual_words(image,dictionary)
 	return get_feature_from_wordmap_SPM(wordmap, layer_num, K)
@@ -198,7 +203,7 @@ def get_feature_from_wordmap_SPM(wordmap,layer_num,dict_size):
 				hist, bin_edges = np.histogram(cols, bins=dict_size)
 				hist_all = np.append(hist_all, hist / norm_factor * weight)
 
-	# Visualization
+	# Visualization of the final concatenated nhistogram
 	# bin_edges = np.arange(hist_all.shape[0]+1)
 	# plt.bar(bin_edges[:-1], hist_all, width = 1)
 	# plt.xlim(min(bin_edges), max(bin_edges))

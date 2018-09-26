@@ -50,10 +50,7 @@ def extract_filter_responses(image):
 		## 4. Derivative of Gaussian in the y direction
 		filter_responses = np.concatenate((filter_responses, scipy.ndimage.filters.gaussian_filter(image, sigma=(filter_scale[i], 0, 0), order=1)), axis=2)
 
-
 	return filter_responses
-
-
 
 def get_visual_words(image,dictionary):
 	'''
@@ -95,7 +92,7 @@ def compute_dictionary_one_image(args):
 	'''
 
 	i,alpha,image_path = args
-	# ----- TODO -----
+
 	image = imageio.imread("../data/"+image_path[0])
 	response = extract_filter_responses(image)
 
@@ -121,13 +118,14 @@ def compute_dictionary(num_workers=2):
 
 	alpha = 300
 	K = 200
-
+	
+	os.mkdir("../temp/")
 	with multiprocessing.Pool(num_workers) as p:
 		args = zip(list(range(train_data['image_names'].shape[0])), [alpha]*train_data['image_names'].shape[0], train_data['image_names'])
 		p.map(compute_dictionary_one_image, args)
 
 	filter_responses = np.empty((0, 60))
-	os.mkdir("../temp/")
+
 	for i in range(train_data['image_names'].shape[0]):
 		response = np.load("../temp/"+str(i)+".npz")
 		filter_responses = np.append(filter_responses, response['filter_responses'], axis=0)
