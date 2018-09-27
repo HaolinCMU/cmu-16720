@@ -43,7 +43,7 @@ def extract_deep_feature(x,vgg16_weights):
 			x = linear(x, layer_weight, bias)
 			linear_layer_counter += 1
 			#print("Image shape after "+layer_type+" : ", x.shape)
-
+			
 	return x
 
 def multichannel_conv2d(x,weight,bias):
@@ -58,17 +58,14 @@ def multichannel_conv2d(x,weight,bias):
 	[output]
 	* feat: numpy.ndarray of shape (H,W,output_dim)
 	'''
-	feat = np.empty((x.shape[0], x.shape[1], 0))
+	feat = np.zeros((x.shape[0], x.shape[1], weight.shape[0]))
 	input_dim = x.shape[2]
 	output_dim = weight.shape[0]
 
 	for i in range(output_dim):
-		weight_single = np.swapaxes(weight[i], axis1=0, axis2=2) # input_dim * kernel_size * kernel_size
-		#print("weight_single")
-		convolved = np.sum(scipy.ndimage.convolve(x, weight_single), axis=2)[:,:,np.newaxis]
-		#print("convolution")
-		feat = np.append(feat, convolved, axis=2)
-		#print("i: ", i)
+		for j in range(input_dim):
+			temp = scipy.ndimage.convolve(x[:,:,j], weight[i,j,:,:])
+			feat[:,:,i] += temp
 
 	return feat + bias
 
@@ -110,4 +107,4 @@ def linear(x,W,b):
 	[output]
 	* y: numpy.ndarray of shape (output_dim)
 	'''
-	return W.dot(x) + b
+	return np.dot(W, x.flatten()) + b

@@ -47,11 +47,11 @@ def build_recognition_system(num_workers=2):
 	features = np.empty((0, int(cluster_num*(pow(4, SPM_layer_num+1) - 1)/3)))
 	labels = []
 
-	os.mkdir("../temp/")
+	os.makedirs("../temp/", exist_ok=True)
 	with multiprocessing.Pool(num_workers) as p:
 		args = zip(list(range(training_sample_num)), train_data['image_names'], train_data['labels'])
 		p.map(compute_feature_one_image, args)
-		
+
 	for i in range(train_data['image_names'].shape[0]):
 		temp = np.load("../temp/"+"training_image_"+str(i)+".npz")
 		features = np.append(features, np.reshape(temp['feature'], (1,-1)), axis=0)
@@ -111,8 +111,8 @@ def evaluate_recognition_system(num_workers=2):
 
 	for i in range(test_sample_num):
 		predicted_label = np.load("../temp/"+"predicted_label_"+str(i)+".npy")
-		if test_data['labels'][i] != predicted_label:
-			print(test_data['image_names'][i][0]+" is predicted as: "+str(predicted_label))
+		# if test_data['labels'][i] != predicted_label:
+		# 	print(test_data['image_names'][i][0]+" is predicted as: "+str(predicted_label))
 		conf[test_data['labels'][i], int(predicted_label)] += 1
 
 	accuracy = np.trace(conf) / np.sum(conf)

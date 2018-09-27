@@ -118,8 +118,8 @@ def compute_dictionary(num_workers=2):
 
 	alpha = 300
 	K = 200
-	
-	os.mkdir("../temp/")
+
+	os.makedirs("../temp/", exist_ok=True)
 	with multiprocessing.Pool(num_workers) as p:
 		args = zip(list(range(train_data['image_names'].shape[0])), [alpha]*train_data['image_names'].shape[0], train_data['image_names'])
 		p.map(compute_dictionary_one_image, args)

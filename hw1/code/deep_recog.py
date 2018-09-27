@@ -34,7 +34,7 @@ def build_recognition_system(vgg16,num_workers=2):
 	# 	args = zip(list(range(training_sample_num)), train_data['image_names'])
 	# 	p.map(get_image_feature, args)
 
-	os.mkdir("../temp/")
+	os.makedirs("../temp/", exist_ok=True)
 	### Use Pytorch VGG16 to train the system
 	if len(vgg16.classifier) == 7:
 		vgg16.classifier = torch.nn.Sequential(*list(vgg16.classifier.children())[:-2])
@@ -87,6 +87,22 @@ def get_image_feature(args):
 
 	np.save("../temp/"+"image_feature_"+str(i)+".npy", feature)
 
+def evaluate_one_image(args):
+
+	train_features = np.load("trained_system_deep.npz")['features']
+	labels = np.load("trained_system_deep.npz")['labels']
+
+	i, image_path = args
+	img_path = "../data/"+image_path[0]
+	image = imageio.imread(img_path)
+	img = preprocess_image(image)
+
+	weights = util.get_VGG16_weights()
+	feature = network_layers.extract_deep_feature(img, weights)
+	label = labels[np.argmax(distance_to_set(feature, train_features))]
+
+	np.save("../temp/"+"predicted_label_deep_"+str(i)+".npy", label)
+	
 def get_image_feature_pytorch(args, vgg16):
 
 	i, image_path = args
