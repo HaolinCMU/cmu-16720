@@ -64,17 +64,38 @@ def computePrincipalCurvature(DoG_pyramid):
     # TO DO ...
     # Compute principal curvature here
     principal_curvature = np.zeros((DoG_pyramid.shape[0], DoG_pyramid.shape[1], DoG_pyramid.shape[2]))
-
+    trH = np.zeros((DoG_pyramid.shape[0], DoG_pyramid.shape[1], DoG_pyramid.shape[2]))
+    detH = np.zeros((DoG_pyramid.shape[0], DoG_pyramid.shape[1], DoG_pyramid.shape[2]))
     for i in range(DoG_pyramid.shape[2]):
         img = DoG_pyramid[:,:,i]
-        dxx = cv2.Sobel(img, ddepth=-1, dx=2, dy=0)
-        dxy = cv2.Sobel(cv2.Sobel(img, ddepth=-1, dx=1, dy=0), ddepth=-1, dx=0, dy=1)
-        dyy = cv2.Sobel(img, ddepth=-1, dx=0, dy=2)
+        dx = cv2.Sobel(img, ddepth=-1, dx=1, dy=0)
+        dy = cv2.Sobel(img, ddepth=-1, dx=0, dy=1)
 
-        hessian = np.stack((dxx, dxy, dxy, dyy), axis=2)
+        dxx = cv2.Sobel(dx, ddepth=-1, dx=1, dy=0)
+        dxy = cv2.Sobel(dx, ddepth=-1, dx=0, dy=1)
+        dyx = cv2.Sobel(dy, ddepth=-1, dx=1, dy=0)
+        dyy = cv2.Sobel(dy, ddepth=-1, dx=0, dy=1)
+        # dxx = cv2.Sobel(img, ddepth=-1, dx=2, dy=0)
+        # dxy = cv2.Sobel(cv2.Sobel(img, ddepth=-1, dx=1, dy=0), ddepth=-1, dx=0, dy=1)
+        # dyx = cv2.Sobel(cv2.Sobel(img, ddepth=-1, dx=0, dy=1), ddepth=-1, dx=1, dy=0)
+        # dyy = cv2.Sobel(img, ddepth=-1, dx=0, dy=2)
 
-        principal_curvature[:,:,i] = (hessian[:,:,0] + hessian[:,:,3]) ** 2 / (hessian[:,:,0] * hessian[:,:,3] - hessian[:,:,1] * hessian[:,:,2])
+        #hessian = np.stack((dxx, dxy, dyx, dyy), axis=2)
+        # trH[:,:,i] = hessian[:,:,0] + hessian[:,:,3]
+        # detH[:,:,i] = hessian[:,:,0] * hessian[:,:,3] - hessian[:,:,1] * hessian[:,:,2]
+        # principal_curvature[:,:,i]
+        R = (dxx + dyy)**2 / (dxx * dyy - dxy * dyx)
 
+        principal_curvature[:,:,i] = R
+    #print(principal_curvature)
+        #principal_curvature[:,:,i] = (hessian[:,:,0] + hessian[:,:,3]) ** 2 / (hessian[:,:,0] * hessian[:,:,3] - hessian[:,:,1] * hessian[:,:,2])
+
+        # counter = 0
+        # for i in range(hessian.shape[0]):
+        #     for j in range(hessian.shape[1]):
+        #         if hessian[i,j,0] * hessian[i,j,3] - hessian[i,j,1] * hessian[i,j,2] == 0:
+        #             print("Nan")
+    #print(principal_curvature[100, 50:60, 2])
     return principal_curvature
 
 def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
@@ -114,13 +135,13 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
                 neighbours = []
                 for offset_x in a:
                     for offset_y in a:
-                        neighbours.append(DoG_pyramid[i+offset_x][j+offset_y][k])
+                        neighbours.append(DoG_pyramid[i+offset_x, j+offset_y, k])
                 for offset_z in b:
-                    neighbours.append(DoG_pyramid[i][j][k+offset_z])
+                    neighbours.append(DoG_pyramid[i, j, k+offset_z])
 
                 neighbours = np.array(neighbours)
                 if np.argmin(neighbours) == 4 or np.argmax(neighbours) == 4: # original pixel
-                    if DoG_pyramid[i,j,k] >= th_contrast:
+                    if abs(DoG_pyramid[i,j,k]) > th_contrast:
                         #print(principal_curvature[i,j,k])
                         if abs(principal_curvature[i,j,k]) < th_r:
                             index = np.array([j,i,k]).reshape(1,3)
@@ -167,15 +188,11 @@ def DoGdetector(im, sigma0=1, k=np.sqrt(2), levels=[-1,0,1,2,3,4],
     return locsDoG, gaussian_pyramid
 
 
-
-
-
-
-
 if __name__ == '__main__':
     # test gaussian pyramid
     levels = [-1,0,1,2,3,4]
-    im = cv2.imread('../data/model_chickenbroth.jpg')
+    #im = cv2.imread('../data/model_chickenbroth.jpg')
+    im = cv2.imread('../data/chickenbroth_01.jpg')
     # im_pyr = createGaussianPyramid(im)
     #displayPyramid(im_pyr)
     # test DoG pyramid

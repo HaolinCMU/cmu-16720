@@ -27,9 +27,11 @@ def computeH(p1, p2):
         A[2*i] = [0, 0, 0, -u, -v, -1, y*u, y*v, y]
         A[2*i+1] = [u, v, 1, 0, 0, 0, -x*u, -x*v, -x]
 
+    #print(A)
     (U, S, V) = np.linalg.svd(A)
 
     L = V[-1,:] / V[-1,-1]
+
     H2to1 = L.reshape(3,3)
 
     # (U, S, V) = np.linalg.svd(A, False)
@@ -53,6 +55,7 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
     ###########################
     # TO DO ...
     n = matches.shape[0]
+    print(n)
     max_num_inliers = -1
     bestH = np.zeros((3,3))
 
@@ -76,13 +79,16 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
         # Compute number of inliers
         X_homo = np.append(np.transpose(X), np.ones((1, n)), axis=0) # 3xn
         U_homo = np.append(np.transpose(U), np.ones((1, n)), axis=0) # 3xn
-        reprojection = np.dot(H, U_homo)
+        reprojection = np.matmul(H, U_homo)
         reprojection_norm = np.divide(reprojection, reprojection[2, :])
+
         error = X_homo - reprojection_norm
         #print(error)
         num_inliers = 0
         for i in range(n):
-            if abs(error[0, i]) <= tol and abs(error[1, i]) <= tol:
+            squared_dist = error[0, i]**2 + error[1, i]**2
+            #print(squared_dist)
+            if squared_dist <= tol**2:
                 num_inliers += 1
         #print(num_inliers)
 
@@ -118,6 +124,15 @@ if __name__ == '__main__':
     locs2, desc2 = briefLite(im2)
 
     matches = briefMatch(desc1, desc2)
-    #plotMatches(im1,im2,matches,locs1,locs2)
-    #P = np.random.randint()
+    plotMatches(im1,im2,matches,locs1,locs2)
+
+    # P = np.random.randint(100, size=(2,4))
+    # P_homo = np.append(P, np.ones((1, 4)), axis=0)
+    # H = np.random.randint(10, size=(3,3))
+    # H = H / np.linalg.norm(H, 2)
+    # Q = np.matmul(H, P_homo)
+    # Q_norm = np.divide(Q, Q[2,:])
+    # H_ = computeH(Q_norm[:2, :], P_homo[:2, :])
+    # print(H - H_)
+
     ransacH(matches, locs1, locs2, num_iter=5000, tol=2)

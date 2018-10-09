@@ -74,7 +74,8 @@ def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
     #keypointDetect.
     patch_width = 9
     n = compareX.shape[0]
-
+    #print(compareX)
+    #print(compareY)
     #l, g = DoGdetector(im)
 
     locs = locsDoG
@@ -82,8 +83,8 @@ def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
     for index in range(locsDoG.shape[0]):
         keypoint = locsDoG[index, :]
 
-        x = keypoint[0]
-        y = keypoint[1]
+        x = keypoint[1]
+        y = keypoint[0]
         level = keypoint[2]
 
         if (x - patch_width//2 >= 0) and (y - patch_width//2 >= 0) and (x + patch_width//2 < im.shape[0]) and (y + patch_width//2 < im.shape[1]):
@@ -122,6 +123,10 @@ def briefLite(im):
     ###################
     # TO DO ...
     locsDoG, gaussian_pyramid = DoGdetector(im)
+    # for i in range(locsDoG.shape[0]):
+    #     cv2.circle(im, (locsDoG[i,0], locsDoG[i,1]), 1, color=(0,255,0), lineType=cv2.LINE_AA)
+    # cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+    # cv2.imshow('image', im)
     locs, desc = computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY)
 
     return locs, desc
