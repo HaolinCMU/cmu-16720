@@ -201,8 +201,9 @@ if __name__ == '__main__':
     # plt.close(fig)
     # test matches
     im1 = cv2.imread('../data/model_chickenbroth.jpg')
-    #im1 = cv2.imread('../data/chickenbroth_02.jpg')
-    im2 = cv2.imread('../data/chickenbroth_05.jpg')
+    im2 = cv2.imread('../data/chickenbroth_03.jpg')
+    # im1 = cv2.imread('../data/pf_scan_scaled.jpg')
+    # im2 = cv2.imread('../data/pf_stand.jpg')
 
     locs1, desc1 = briefLite(im1)
     locs2, desc2 = briefLite(im2)

@@ -19,7 +19,7 @@ def imageStitching(im1, im2, H2to1):
     #######################################
     # TO DO ...
 
-    pano_im = cv2.warpPerspective(im2, H2to1, (2000, 2000))
+    pano_im = cv2.warpPerspective(im2, H2to1, (1700, 700))
 
     for i in range(im1.shape[0]):
         for j in range(im1.shape[1]):
@@ -86,21 +86,34 @@ def imageStitching_noClip(im1, im2, H2to1):
 
     return pano_im
 
+def generatePanorama(im1, im2):
+    locs1, desc1 = briefLite(im1)
+    locs2, desc2 = briefLite(im2)
+    matches = briefMatch(desc1, desc2)
+    H2to1 = ransacH(matches, locs1, locs2, num_iter=5000, tol=2)
+    pano_im = imageStitching_noClip(im1, im2, H2to1)
+
+    return pano_im
 
 if __name__ == '__main__':
     im1 = cv2.imread('../data/incline_L.png')
     im2 = cv2.imread('../data/incline_R.png')
-    #print(im1.shape)
+
     locs1, desc1 = briefLite(im1)
     locs2, desc2 = briefLite(im2)
     matches = briefMatch(desc1, desc2)
     #plotMatches(im1,im2,matches,locs1,locs2)
     H2to1 = ransacH(matches, locs1, locs2, num_iter=5000, tol=2)
-    #print(im2.shape)
-    #pano_im = imageStitching(im1, im2, H2to1)
+    np.save('../results/q6_1.npy', H2to1)
+
+    pano_im_6_1 = imageStitching(im1, im2, H2to1)
+    cv2.imwrite('../results/6_1.jpg', pano_im_6_1)
+
     pano_im = imageStitching_noClip(im1, im2, H2to1)
-    print(H2to1)
-    cv2.imwrite('../results/panoImg.png', pano_im)
-    cv2.imshow('panoramas', pano_im)
+    cv2.imwrite('../results/q6_2_pan.jpg', pano_im)
+
+    im3 = generatePanorama(im1, im2)
+    cv2.imwrite('../results/q6_3.jpg', im3)
+    cv2.imshow('panoramas', im3)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

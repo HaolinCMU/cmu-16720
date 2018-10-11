@@ -55,7 +55,7 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
     ###########################
     # TO DO ...
     n = matches.shape[0]
-    print(n)
+    print("Number of matches: ", n)
     max_num_inliers = -1
     bestH = np.zeros((3,3))
 
@@ -97,7 +97,7 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
         if num_inliers > max_num_inliers:
             bestH = H
             max_num_inliers = num_inliers
-    print(max_num_inliers)
+    print("RANSAC max number of inliers: ", max_num_inliers)
 
     return bestH
 

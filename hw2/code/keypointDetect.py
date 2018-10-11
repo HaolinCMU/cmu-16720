@@ -213,9 +213,10 @@ if __name__ == '__main__':
     # test DoG detector
 
     locsDoG, gaussian_pyramid = DoGdetector(im)
-    print(locsDoG.shape)
     for i in range(locsDoG.shape[0]):
         cv2.circle(im, (locsDoG[i,0], locsDoG[i,1]), 1, color=(0,255,0), lineType=cv2.LINE_AA)
     cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+    im = cv2.resize(im, (im.shape[1]*5, im.shape[0]*5))
+    cv2.imwrite('../results/keypoints.png', im)
     cv2.imshow('image', im)
     cv2.waitKey(0) # press any key to exit

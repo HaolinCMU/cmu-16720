@@ -207,7 +207,7 @@ if __name__ == '__main__':
     im2 = cv2.imread('../data/model_chickenbroth.jpg')
     locs1, desc1 = briefLite(im1)
 
-    angle = np.linspace(10, 180, 18).astype(int)
+    angle = np.linspace(0, 180, 19).astype(int)
     angle_str = []
     num_matches = []
     y_pos = np.arange(angle.shape[0])
