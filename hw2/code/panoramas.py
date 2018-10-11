@@ -24,7 +24,7 @@ def imageStitching(im1, im2, H2to1):
     for i in range(im1.shape[0]):
         for j in range(im1.shape[1]):
             for k in range(im1.shape[2]):
-                pano_im[i,j,k] = im1[i,j,k]
+                pano_im[i,j,k] = max(im1[i,j,k], pano_im[i,j,k])
 
     return pano_im
 
@@ -37,21 +37,31 @@ def imageStitching_noClip(im1, im2, H2to1):
     ######################################
     # TO DO ...
     #pano_im = cv2.warpPerspective(im2, H2to1, (2500, 2500))
-    cornersX = np.array([0, 0, im2.shape[0] - 1, im2.shape[0] - 1]).reshape(1,4)
-    cornersY = np.array([0, im2.shape[1] - 1, im2.shape[0] - 1, 0]).reshape(1,4)
+    # print("im1 shape: ", im1.shape)
+    # print("im2 shape: ", im2.shape)
+    cornersX = np.array([0, 0, im2.shape[1] - 1, im2.shape[1] - 1]).reshape(1,4)
+    cornersY = np.array([0, im2.shape[0] - 1, im2.shape[0] - 1, 0]).reshape(1,4)
+    # print("Corners X: ", cornersX)
+    # print("Corners Y: ", cornersY)
     homo = np.ones((1, 4))
 
     corners = np.concatenate((cornersX, cornersY, homo), axis=0)
-
+    # print("Corners: ", corners)
     transformed = np.matmul(H2to1, corners)
+    # print("Transformed: ")
+    # for rows in transformed:
+    #     print(rows)
     transformed_norm = np.divide(transformed, transformed[2,:])
+    # print("Transformed normed: ")
+    # for rows in transformed_norm:
+    #     print(rows)
 
     x2_max = np.max(transformed_norm[0])
     y2_max = np.max(transformed_norm[1])
     x2_min = np.min(transformed_norm[0])
     y2_min = np.min(transformed_norm[1])
-    x1_max = im1.shape[0]
-    y1_max = im1.shape[1]
+    x1_max = im1.shape[1]-1
+    y1_max = im1.shape[0]-1
     x1_min = 0
     y1_min = 0
     x_max = max(x1_max, x2_max)
@@ -59,7 +69,20 @@ def imageStitching_noClip(im1, im2, H2to1):
     y_max = max(y1_max, y2_max)
     y_min = min(y1_min, y2_min)
 
-    
+    outsize = (int(x_max - x_min), int(y_max - y_min))
+    # print("x_max: ", x_max)
+    # print("x_min: ", x_min)
+    # print("y_max: ", y_max)
+    # print("y_min: ", y_min)
+    x_offset = int(abs(x_min))
+    y_offset = int(abs(y_min))
+    # print("x_offset: ", x_offset)
+    # print("y_offset: ", y_offset)
+    M = np.array([[1, 0, x_offset], [0, 1, y_offset], [0, 0, 1]], dtype='f')
+
+    warp_im1 = cv2.warpPerspective(im1, M, outsize)
+    warp_im2 = cv2.warpPerspective(im2, np.matmul(M, H2to1), outsize)
+    pano_im = np.maximum(warp_im1, warp_im2)
 
     return pano_im
 
@@ -77,7 +100,7 @@ if __name__ == '__main__':
     #pano_im = imageStitching(im1, im2, H2to1)
     pano_im = imageStitching_noClip(im1, im2, H2to1)
     print(H2to1)
-    #cv2.imwrite('../results/panoImg.png', pano_im)
+    cv2.imwrite('../results/panoImg.png', pano_im)
     cv2.imshow('panoramas', pano_im)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

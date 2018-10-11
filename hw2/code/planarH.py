@@ -62,7 +62,9 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
     X = np.zeros((n, 2))
     U = np.zeros((n, 2))
     X[:, :] = locs1[matches[:, 0], 0:2]
+    # X[:, [0,1]] = X[:, [1,0]]
     U[:, :] = locs2[matches[:, 1], 0:2]
+    # U[:, [0,1]] = X[:, [1,0]]
 
     p1 = np.zeros((2, 4))
     p2 = np.zeros((2, 4))
@@ -97,21 +99,6 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
             max_num_inliers = num_inliers
     print(max_num_inliers)
 
-    # for i in range(n):
-    #     index1 = matches[i, 0]
-    #     index2 = matches[i, 1]
-    #     x = locs1[index1, 0]
-    #     y = locs1[index1, 1]
-    #     u = locs2[index2, 0]
-    #     v = locs2[index2, 1]
-    #
-    #     a = np.array([x, y, 1]).reshape(3, 1)
-    #     b = np.array([u, v, 1]).reshape(3, 1)
-    #
-    #     error = a - np.dot(bestH, b)
-    #     print(error)
-
-
     return bestH
 
 
@@ -119,7 +106,7 @@ def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
 if __name__ == '__main__':
     im1 = cv2.imread('../data/model_chickenbroth.jpg')
     im2 = cv2.imread('../data/chickenbroth_01.jpg')
-    #im2 = cv2.imread('../data/model_chickenbroth.jpg')
+
     locs1, desc1 = briefLite(im1)
     locs2, desc2 = briefLite(im2)
 

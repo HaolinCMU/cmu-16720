@@ -26,12 +26,13 @@ def makeTestPattern(patch_width=9, nbits=256):
     # Generate testpattern here
 
     # To use Gaussian random sampling
-    #compareX = np.random.normal(patch_width//2, patch_width**2/25, nbits)
-    #compareY = np.random.normal(patch_width//2, patch_width**2/25, nbits)
+    # compareX = np.random.normal(patch_width//2, patch_width**2/25, nbits)
+    # compareY = np.random.normal(patch_width//2, patch_width**2/25, nbits)
     #
     compareX = np.random.random_integers(0, patch_width**2 - 1, nbits)
     compareY = np.random.random_integers(0, patch_width**2 - 1, nbits)
     #np.save('../results/testPattern.npy', [compareX, compareY])
+
     return  compareX, compareY
 
 # load test pattern for Brief
@@ -77,8 +78,16 @@ def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
     #print(compareX)
     #print(compareY)
     #l, g = DoGdetector(im)
+    #locs = locsDoG
+    locs = []
+    for i in range(locsDoG.shape[0]):
+        keypoint = locsDoG[i, :]
+        x = keypoint[1]
+        y = keypoint[0]
+        if (x - patch_width//2 >= 0) and (y - patch_width//2 >= 0) and (x + patch_width//2 < im.shape[0]) and (y + patch_width//2 < im.shape[1]):
+            locs.append(locsDoG[i,:])
+    locs = np.array(locs)
 
-    locs = locsDoG
     desc = np.empty((0, n))
     for index in range(locsDoG.shape[0]):
         keypoint = locsDoG[index, :]
@@ -91,7 +100,7 @@ def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
 
             patch = np.empty((patch_width, patch_width))
             for i in range(patch_width):
-                patch[i, :] = gaussian_pyramid[x-patch_width//2+i, y-patch_width//2:y+patch_width//2+1, level]
+                patch[i, :] = im[x-patch_width//2+i, y-patch_width//2:y+patch_width//2+1]
             patch.resize(patch_width**2)
 
 
@@ -123,6 +132,10 @@ def briefLite(im):
     ###################
     # TO DO ...
     locsDoG, gaussian_pyramid = DoGdetector(im)
+    if len(im.shape)==3:
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    if im.max()>10:
+        im = np.float32(im)/255
     # for i in range(locsDoG.shape[0]):
     #     cv2.circle(im, (locsDoG[i,0], locsDoG[i,1]), 1, color=(0,255,0), lineType=cv2.LINE_AA)
     # cv2.namedWindow("image", cv2.WINDOW_NORMAL)
@@ -188,7 +201,8 @@ if __name__ == '__main__':
     # plt.close(fig)
     # test matches
     im1 = cv2.imread('../data/model_chickenbroth.jpg')
-    im2 = cv2.imread('../data/chickenbroth_01.jpg')
+    #im1 = cv2.imread('../data/chickenbroth_02.jpg')
+    im2 = cv2.imread('../data/chickenbroth_05.jpg')
 
     locs1, desc1 = briefLite(im1)
     locs2, desc2 = briefLite(im2)

@@ -125,6 +125,11 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
     for i in range(1, DoG_pyramid.shape[0]-1):
         for j in range(1, DoG_pyramid.shape[1]-1):
             for k in range(DoG_pyramid.shape[2]):
+                if abs(DoG_pyramid[i,j,k]) < th_contrast:
+                    continue
+                if abs(principal_curvature[i,j,k]) > th_r:
+                    continue
+
                 a = [-1, 0, 1]
                 b = [-1, 1]
                 if k == 0:
@@ -141,11 +146,11 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
 
                 neighbours = np.array(neighbours)
                 if np.argmin(neighbours) == 4 or np.argmax(neighbours) == 4: # original pixel
-                    if abs(DoG_pyramid[i,j,k]) > th_contrast:
+                    #if abs(DoG_pyramid[i,j,k]) > th_contrast:
                         #print(principal_curvature[i,j,k])
-                        if abs(principal_curvature[i,j,k]) < th_r:
-                            index = np.array([j,i,k]).reshape(1,3)
-                            locsDoG = np.append(locsDoG, index, axis=0)
+                        #if abs(principal_curvature[i,j,k]) < th_r:
+                    index = np.array([j,i,k]).reshape(1,3)
+                    locsDoG = np.append(locsDoG, index, axis=0)
 
     return locsDoG.astype(int)
 
@@ -191,10 +196,10 @@ def DoGdetector(im, sigma0=1, k=np.sqrt(2), levels=[-1,0,1,2,3,4],
 if __name__ == '__main__':
     # test gaussian pyramid
     levels = [-1,0,1,2,3,4]
-    #im = cv2.imread('../data/model_chickenbroth.jpg')
-    im = cv2.imread('../data/chickenbroth_01.jpg')
-    # im_pyr = createGaussianPyramid(im)
-    #displayPyramid(im_pyr)
+    im = cv2.imread('../data/model_chickenbroth.jpg')
+    #im = cv2.imread('../data/chickenbroth_01.jpg')
+    im_pyr = createGaussianPyramid(im)
+    displayPyramid(im_pyr)
     # test DoG pyramid
     # DoG_pyr, DoG_levels = createDoGPyramid(im_pyr, levels)
     #displayPyramid(DoG_pyr)
