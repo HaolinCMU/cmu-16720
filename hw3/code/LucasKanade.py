@@ -13,8 +13,8 @@ def LucasKanade(It, It1, rect, p0 = np.zeros(2)):
 
 	# Put your implementation here
 
-	p = p0
-	threshold = 0.001
+	p = np.copy(p0)
+	threshold = 0.01
 
 	It1_x = np.arange(0, It1.shape[0], 1)
 	It1_y = np.arange(0, It1.shape[1], 1)
@@ -24,33 +24,42 @@ def LucasKanade(It, It1, rect, p0 = np.zeros(2)):
 	It_y = np.arange(0, It.shape[1], 1)
 	interp_spline_It = RectBivariateSpline(It_x, It_y, It)
 
+	y1 = rect[0]
+	x1 = rect[1]
+	y2 = rect[2]
+	x2 = rect[3]
+
+	width = int(np.rint(x2 - x1 + 1))
+	height = int(np.rint(y2 - y1 + 1))
+
+	yv, xv = np.meshgrid(np.arange(height), np.arange(width))
+	xv = xv.astype(np.float32)
+	yv = yv.astype(np.float32)
+	xv += x1
+	yv += y1
+	xv = np.reshape(xv, (1, xv.shape[0]*xv.shape[1]))
+	yv = np.reshape(yv, (1, yv.shape[0]*yv.shape[1]))
+	xv_orig = np.copy(xv)
+	yv_orig = np.copy(yv)
+
+	A = np.zeros((int(width*height), 2))
+	b = np.zeros((int(width*height)))
+
+	I_orig = interp_spline_It.ev(xv_orig, yv_orig)
+	# xv = xv_orig + p0[0]
+	# yv = yv_orig + p0[1]
+	indexes = np.zeros((int(width*height), 2))
+	indexes_orig = np.zeros((int(width*height), 2))
+
 	dp_norm = threshold
-
-	x1 = rect[0]
-	y1 = rect[1]
-	x2 = rect[2]
-	y2 = rect[3]
-
-	width = int(x2 - x1 + 1)
-	height = int(y2 - y1 + 1)
-
 	while dp_norm >= threshold:
-		A = np.zeros((int(width*height), 2))
-		b = np.zeros((int(width*height)))
-		indexes = np.zeros((int(width*height), 2))
-		indexes_orig = np.zeros((int(width*height), 2))
 
-		for i in range(width):
-			for j in range(height):
-				indexes[i*height+j, 0] = x1+i+p[0]+1
-				indexes[i*height+j, 1] = y1+j+p[1]+1
-				indexes_orig[i*height+j, 0] = x1+i+1
-				indexes_orig[i*height+j, 1] = y1+j+1
+		xv = xv_orig + p[0]
+		yv = yv_orig + p[1]
 
-		I = interp_spline_It1.ev(indexes[:,0], indexes[:,1])
-		Ix = interp_spline_It1.ev(indexes[:,0], indexes[:,1], dx=1)
-		Iy = interp_spline_It1.ev(indexes[:,0], indexes[:,1], dy=1)
-		I_orig = interp_spline_It.ev(indexes_orig[:,0], indexes_orig[:,1])
+		I = interp_spline_It1.ev(xv, yv)
+		Ix = interp_spline_It1.ev(xv, yv, dx=1)
+		Iy = interp_spline_It1.ev(xv, yv, dy=1)
 
 		# Construct A and b matrices
 		b[:] = (I_orig - I)[:]
@@ -60,8 +69,8 @@ def LucasKanade(It, It1, rect, p0 = np.zeros(2)):
 		dp, residuals, rank, s = np.linalg.lstsq(A, b)
 
 		dp_norm = np.linalg.norm(dp)
-		print('dp_norm: ', dp_norm)
+		#print('dp_norm: ', dp_norm)
 		p += dp
-		print('p: ', p)
+		#print('p: ', p)
 
 	return p

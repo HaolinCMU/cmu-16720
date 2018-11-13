@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import animation
 import matplotlib.patches as patches
-
+import scipy.ndimage
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 img = np.load('lena.npy')
 
@@ -79,12 +80,29 @@ def animate(i):
         return [cropax, patch, all_patchax]
     else:  # Stuff to do after the animation ends
         fig3d = plt.figure()
-        ax3d = fig3d.add_subplot(111, projection='3d')
+        ax3d = Axes3D(fig3d)
+        # ax3d = fig3d.add_subplot(111, projection='3d')
         ax3d.plot_surface(dpx.reshape(dsize), dpy.reshape(dsize),
                           Y.reshape(dsize), cmap=plt.get_cmap('coolwarm'))
 
         # Place your solution code for question 4.3 here
+        lamda = 0
+
+        # For correlation
+        g = np.dot(np.dot(np.linalg.inv(np.dot(X, X.transpose()) + lamda * np.eye(X.shape[0])), X), Y).reshape((29, 45))
+        img_filtered = scipy.ndimage.correlate(img, g)
+
+        # For convolution
+        g_flipped = np.copy(g)
+        g_flipped[:,:] = g[-1::-1,-1::-1]
+        img_filtered = scipy.ndimage.convolve(img, g_flipped)
+
+
+        fig = plt.figure()
+        # plt.imshow(g, cmap='Greys') # visualize g
+        plt.imshow(img_filtered, cmap='Greys')
         plt.show()
+
         return []
 
 

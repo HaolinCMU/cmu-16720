@@ -21,7 +21,6 @@ if ( check_file('../'+andrew_id+'/LucasKanade.py') and \
      check_file('../'+andrew_id+'/carseqrects.npy') and \
      check_file('../'+andrew_id+'/carseqrects-wcrt.npy') and \
      check_file('../'+andrew_id+'/sylvseqrects.npy') and \
-     check_file('../'+andrew_id+'/aerialseqrects.npy') and \
      check_file('../'+andrew_id+'/'+andrew_id+'_hw3.pdf') ):
     print('file check passed!')
 else:
