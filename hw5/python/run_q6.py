@@ -20,6 +20,7 @@ train_x -= mean
 U, S, V = np.linalg.svd(np.dot(train_x.T, train_x))
 
 projection = U[:, :dim]
+print("Shape of projection matrix: ", projection.shape)
 
 # rebuild a low-rank version
 lrank = np.dot(train_x, projection)
@@ -39,6 +40,25 @@ valid_x -= mean
 recon_valid = np.dot(np.dot(valid_x, projection), projection.T)
 recon_valid += mean
 valid_x += mean
+
+# Plot reconsturcted pictures from 5 classes
+valid_y = valid_data['valid_labels']
+counter = 0
+
+class_id = np.random.choice(np.arange(36), size=5, replace=False)
+# print(class_id)
+for id in class_id:
+    counter = 0
+    for i in range(valid_x.shape[0]):
+        if valid_y[i][id] == 1:
+            counter += 1
+            plt.subplot(2,1,1)
+            plt.imshow(valid_x[i].reshape(32,32).T)
+            plt.subplot(2,1,2)
+            plt.imshow(recon_valid[i].reshape(32,32).T)
+            plt.show()
+            if counter == 2:
+                break
 
 total = []
 for pred,gt in zip(recon_valid,valid_x):

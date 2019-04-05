@@ -68,14 +68,14 @@ np.savez('q4_2.npz', M1=M1, M2=M2s[:,:,min_index], C1=C1, C2=min_C2)
 print("find M2 error: ", min_error)
 P = np.copy(min_P)
 # print(P)
-F, inliers = ransacF(point1, point2, M)
+F, inliers = ransacF(points1, points2, M)
 pts1_in = np.empty((0, 2))
 pts2_in = np.empty((0, 2))
 
 for i in range(inliers.shape[0]):
     if inliers[i] == True:
-        pts1_in = np.append(pts1_in, pts1_noisy[i].reshape(1, 2), axis=0)
-        pts2_in = np.append(pts2_in, pts2_noisy[i].reshape(1, 2), axis=0)
+        pts1_in = np.append(pts1_in, points1[i].reshape(1, 2), axis=0)
+        pts2_in = np.append(pts2_in, points2[i].reshape(1, 2), axis=0)
 print("Num inliers: ", pts1_in.shape[0])
 F = refineF(F, pts1_in, pts2_in)
 
@@ -111,7 +111,7 @@ print("Error before bundleAdjustment: ", min_error)
 
 M2_ba, P_ba = bundleAdjustment(K1, M1, pts1_in, K2, M2, pts2_in, P)
 C2_ba = np.dot(K2, M2_ba)
-P_ba, error = triangulate(C1, point1, C2_ba, point2)
+P_ba, error = triangulate(C1, points1, C2_ba, points2)
 print("Error after bundleAdjustment: ", error)
 # print(P.shape)
 # print(P_ba.shape)

@@ -21,6 +21,10 @@ batch_num = len(batches)
 
 params = Counter()
 
+loss_list = []
+acc_list = []
+epoch_list = np.arange(max_iters)
+
 # initialize layers here
 initialize_weights(1024,32,params,'layer1') # relu
 initialize_weights(32,32,params,'hidden') # relu
@@ -30,6 +34,7 @@ initialize_weights(32,1024,params,'output') # sigmoid
 # should look like your previous training loops
 for itr in range(max_iters):
     total_loss = 0
+    # total_acc = 0
     for xb,_ in batches:
         pass
         # training loop can be exactly the same as q2!
@@ -80,16 +85,31 @@ for itr in range(max_iters):
         params['W' + 'layer1'] += params['m_W' + 'layer1']
         params['b' + 'layer1'] += params['m_b' + 'layer1']
 
-        # print("Momentum: ", np.sum(params['m_' + 'output']))
-        # total_acc /= len(batches)
+    # print("Momentum: ", np.sum(params['m_' + 'output']))
+    # total_loss /= len(batches)
+    # total_acc /= len(batches)
 
-        # loss_list.append(total_loss)
-        # acc_list.append(total_acc)
+    loss_list.append(total_loss)
+    # acc_list.append(total_acc)
 
     if itr % 2 == 0:
         print("itr: {:02d} \t loss: {:.2f}".format(itr,total_loss))
     if itr % lr_rate == lr_rate-1:
         learning_rate *= 0.9
+
+# Plot loss and accuracy
+import matplotlib.pyplot as plt
+
+plt.figure(1)
+ax = plt.gca()
+ax.set_xlabel('Epoch')
+ax.set_ylabel('Training Loss')
+ax.plot(epoch_list, loss_list, color='r', linewidth=2, alpha=1.0, label='loss')
+ax.legend()
+
+plt.show()
+
+
 # visualize some results
 # Q5.3.1
 import matplotlib.pyplot as plt
@@ -97,24 +117,42 @@ h1 = forward(xb,params,'layer1',relu)
 h2 = forward(h1,params,'hidden',relu)
 h3 = forward(h2,params,'hidden2',relu)
 out = forward(h3,params,'output',sigmoid)
-for i in range(5):
-    plt.subplot(2,1,1)
-    plt.imshow(xb[i].reshape(32,32).T)
-    plt.subplot(2,1,2)
-    plt.imshow(out[i].reshape(32,32).T)
-    plt.show()
+# for i in range(5):
+#     plt.subplot(2,1,1)
+#     plt.imshow(xb[i].reshape(32,32).T)
+#     plt.subplot(2,1,2)
+#     plt.imshow(out[i].reshape(32,32).T)
+#     plt.show()
 
+h1 = forward(valid_x,params,'layer1',relu)
+h2 = forward(h1,params,'hidden',relu)
+h3 = forward(h2,params,'hidden2',relu)
+out = forward(h3,params,'output',sigmoid)
+
+# Plot reconsturcted pictures from 5 classes
+valid_y = valid_data['valid_labels']
+counter = 0
+
+class_id = np.random.choice(np.arange(36), size=5, replace=False)
+# print(class_id)
+for id in class_id:
+    counter = 0
+    for i in range(valid_x.shape[0]):
+        if valid_y[i][id] == 1:
+            counter += 1
+            plt.subplot(2,1,1)
+            plt.imshow(valid_x[i].reshape(32,32).T)
+            plt.subplot(2,1,2)
+            plt.imshow(out[i].reshape(32,32).T)
+            plt.show()
+            if counter == 2:
+                break
 
 from skimage.measure import compare_psnr as psnr
 # evaluate PSNR
 # Q5.3.2
 num_valid = valid_x.shape[0]
 psnr_total = 0
-
-h1 = forward(valid_x,params,'layer1',relu)
-h2 = forward(h1,params,'hidden',relu)
-h3 = forward(h2,params,'hidden2',relu)
-out = forward(h3,params,'output',sigmoid)
 
 for i in range(num_valid):
     psnr_total += psnr(valid_x[i], out[i])

@@ -31,8 +31,10 @@ if __name__ == '__main__':
 	vgg16 = torchvision.models.vgg16(pretrained=True).double()
 	vgg16.eval()
 	#
-	deep_recog.build_recognition_system(vgg16,num_workers=num_cores//2)
+	#deep_recog.build_recognition_system(vgg16,num_workers=num_cores//2)
 	#
-	conf, accuracy = deep_recog.evaluate_recognition_system(vgg16,num_workers=num_cores//2)
-	print("Confusion matrix of VGG16: ", conf)
-	# print(np.diag(conf).sum()/conf.sum())
+	#conf, accuracy = deep_recog.evaluate_recognition_system(vgg16,num_workers=num_cores//2)
+	conf, accuracy = deep_recog.evaluate_recognition_system(vgg16,num_workers=num_cores)
+	#print("Confusion matrix of VGG16: ", conf)
+	print("Confusion matrix of 3.1: ", conf)
+	print("Accuracy: ", np.diag(conf).sum()/conf.sum())

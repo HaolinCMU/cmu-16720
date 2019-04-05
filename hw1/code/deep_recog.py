@@ -100,9 +100,9 @@ def evaluate_one_image(args):
 	weights = util.get_VGG16_weights()
 	feature = network_layers.extract_deep_feature(img, weights)
 	label = labels[np.argmax(distance_to_set(feature, train_features))]
-
+	print("Evaluation done for image ", i)
 	np.save("../temp/"+"predicted_label_deep_"+str(i)+".npy", label)
-	
+
 def get_image_feature_pytorch(args, vgg16):
 
 	i, image_path = args
@@ -153,7 +153,8 @@ def evaluate_recognition_system(vgg16,num_workers=2):
 
 	with multiprocessing.Pool(num_workers) as p:
 		args = zip(list(range(test_sample_num)), test_data['image_names'])
-		p.map(partial(evaluate_one_image_pytorch, vgg16=vgg16), args)
+		#p.map(partial(evaluate_one_image_pytorch, vgg16=vgg16), args)
+		p.map(evaluate_one_image, args)
 
 	conf = np.zeros((8,8))
 
